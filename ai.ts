@@ -1,91 +1,106 @@
-  // types
+// types
 
-  type Delta = number[];
+type Delta = number[];
 
-  type Order = {
-      actionId: number;
-      delta: Delta;
-      price: number;
-  };
-
-  type Spell = {
-      actionId: number;
-      delta: Delta;
-      castable: boolean;
-      repeatable: boolean;
-  };
-
-  type Learn = {
+type Order = {
     actionId: number;
     delta: Delta;
-  }
+    price: number;
+};
 
-  type Recipes = (Order | Spell)[];
+type Spell = {
+    actionId: number;
+    delta: Delta;
+    castable: boolean;
+    repeatable: boolean;
+};
+
+type Learn = {
+  actionId: number;
+  delta: Delta;
+}
+
+type Recipes = (Order | Spell)[];
 
 
-  // initial values
+// initial values
 
-  const initAction = {
-      actionId: 0,
-      price: 0
-  };
-  let nextAction = initAction;
-  let orders: Order[] = [];
-  let spells: Spell[] = [];
-  let learnSpells: Learn[] = [];
-  let userData: any[];
+const initAction = {
+    actionId: 0,
+    price: 0
+};
+let nextAction = initAction;
+let orders: Order[] = [];
+let spells: Spell[] = [];
+let learnSpells: Learn[] = [];
+let userData: any[];
 
-  // functinos
+// functinos
 
-  const filterAfordableRecipies = (recipes: Recipes, myInventoryDelta: Delta): Recipes => {
-    return recipes.filter(recipe => {
-        return (checkMissingIngredients(recipe.delta, myInventoryDelta).length === 0);
-    });
-  }
+const filterAfordableRecipies = (recipes: Recipes, myInventoryDelta: Delta): Recipes => {
+  return recipes.filter(recipe => {
+      return (checkMissingIngredients(recipe.delta, myInventoryDelta).length === 0);
+  });
+}
 
-  const filterCastableSpells = (spells: Spell[]): Spell[] => {
-    return spells.filter(spell => spell.castable);
-  }
+const filterCastableSpells = (spells: Spell[]): Spell[] => {
+  return spells.filter(spell => spell.castable);
+}
 
-  const maxInventoryDeltaIngredient = (inventoryDelta: Delta): number => {
-    return inventoryDelta.indexOf(Math.max(...inventoryDelta));
-  }
+const maxInventoryDeltaIngredient = (inventoryDelta: Delta): number => {
+  return inventoryDelta.indexOf(Math.max(...inventoryDelta));
+}
 
-  // Strategy 1
-  const randomSpell = (castableSpells: Spell[]): Spell => {
-    const randomIndex = Math.floor(Math.random() * castableSpells.length);
-    return castableSpells[randomIndex];
-  }
+// Strategy 1
+const randomSpell = (castableSpells: Spell[]): Spell => {
+  const randomIndex = Math.floor(Math.random() * castableSpells.length);
+  return castableSpells[randomIndex];
+}
 
 // Strategy 2
-const chooseSpell = (orders: Order[], myInventoryDelta: Delta, spells: Spell[]): Spell => {
+const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: Spell[]): Spell => {
   // 1. pick first order with bonus points from the queue
   // 2. check delta for what's missing
   // 3. search for spells that can yeald needed ingredients
+  // 4. fallback to random strategy
 
   const firstOrder = orders[0];
+  const missingIngredientsIndexes = checkMissingIngredients(firstOrder.delta, myInventoryDelta);
+  const neededIngridientsSpells: Spell[] = castableSpells.filter(spell => {
+    if (spell.delta[missingIngredientsIndexes[0]] > 0) {
+      return true;
+    }
+    if (missingIngredientsIndexes.length === 2 && spell.delta[missingIngredientsIndexes[1]] > 0) {
+      return true;
+    }
+    return false;
+  })
 
-  return randomSpell(spells); // for now ...
+  if (neededIngridientsSpells.length > 0) {
+    return neededIngridientsSpells.pop();
+  }
+
+  return randomSpell(spells); // fallback
 }
 
 // checkes for missing inventory ingredients for given delta
 const checkMissingIngredients = (delta: Delta, myInventoryDelta: Delta): number[] => {
-  const missingIngredientsIndex = [];
+  const missingIngredientsIndexes = [];
 
   if ((delta[0] + myInventoryDelta[0]) < 0) {
-    missingIngredientsIndex.push(0);
+    missingIngredientsIndexes.push(0);
   }
   if ((delta[1] + myInventoryDelta[1]) < 0) {
-    missingIngredientsIndex.push(1);
+    missingIngredientsIndexes.push(1);
   }
   if ((delta[2] + myInventoryDelta[2]) < 0) {
-    missingIngredientsIndex.push(2);
+    missingIngredientsIndexes.push(2);
   }
   if ((delta[3] + myInventoryDelta[3]) < 0) {
-    missingIngredientsIndex.push(3);
+    missingIngredientsIndexes.push(3);
   }
 
-  return missingIngredientsIndex;
+  return missingIngredientsIndexes;
 }
 
 const spellInventorySpam = (spell: Spell, inventoryDelta: number[]): boolean => {
@@ -195,7 +210,8 @@ while (true) {
 
     } else if (castableSpells.length > 1) {
 
-      const spellToCast = randomSpell(castableSpells);
+      // const spellToCast = randomSpell(castableSpells);
+      const spellToCast = chooseSpell(orders, userData[0].inventoryDelta, castableSpells);
 
       if (spellInventorySpam(spellToCast, userData[0].inventoryDelta)) {
         console.log('LEARN ' + learnSpells[0].actionId);
