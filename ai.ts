@@ -52,6 +52,10 @@ const maxInventoryDeltaIngredient = (inventoryDelta: Delta): number => {
   return inventoryDelta.indexOf(Math.max(...inventoryDelta));
 }
 
+const calculateEffort = order => {
+    return order.delta[0] + order.delta[1]*2 + order.delta[2]*3 + order.delta[3]*4;
+}
+
 // Strategy 1
 const randomSpell = (castableSpells: Spell[]): Spell => {
   const randomIndex = Math.floor(Math.random() * castableSpells.length);
@@ -60,13 +64,13 @@ const randomSpell = (castableSpells: Spell[]): Spell => {
 
 // Strategy 2
 const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: Spell[]): Spell | null => {
-  // 1. pick first order with bonus points from the queue
+  // 1. pick less effort order between 1 and 2
   // 2. check delta for what's missing
   // 3. search for spells that can yeald needed ingredients
   // 4. fallback to random strategy
 
-  const firstOrder = orders[0];
-  const missingIngredientsIndexes = checkMissingIngredients(firstOrder.delta, myInventoryDelta);
+  const pickedOrder = calculateEffort(orders[0]) <= calculateEffort(orders[1]) ? orders[0] : orders[1];
+  const missingIngredientsIndexes = checkMissingIngredients(pickedOrder.delta, myInventoryDelta);
   const neededIngridientsSpells: Spell[] = castableSpells.filter(spell => {
     if (spell.delta[missingIngredientsIndexes[0]] > 0) {
       return true;

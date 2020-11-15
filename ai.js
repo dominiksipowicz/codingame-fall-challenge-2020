@@ -118,20 +118,28 @@ var spellInventorySpam = function (spell, inventoryDelta) {
     return false;
 };
 // strategy 3 - aha! custom shit ust to get a bit of headstart
-var performSpecialActions = function (orders, myInventoryDelta, learnSpells) {
+var performSpecialActions = function (orders, myInventoryDelta, learnSpells, castableSpells) {
     var filter0InventoryTome = function (learnSpell) {
         return learnSpell.tomeIndex < myInventoryDelta[0];
     };
     var canAffordIt = function (learn) { return (learn.tomeIndex < 2 || learn.tomeIndex < myInventoryDelta[0]); };
     var cmpDelta = function (learn, delta) { return learn.delta.toString() === delta.toString(); };
-    // Lear quickly a very powerful spells
+    // Learn quickly a very powerful spells
     var powerfulSpellDeltas = function (learn) { return (cmpDelta(learn, [1, 0, 1, 0])
-        || cmpDelta(learn, [0, 0, 1, 0])); };
+        || cmpDelta(learn, [0, 0, 1, 0])
+        || cmpDelta(learn, [2, 1, 0, 0])); };
     var learnPowerfullSpells = learnSpells
         .filter(function (learn) { return (powerfulSpellDeltas(learn) && canAffordIt(learn)); });
     learnPowerfullSpells.map(function (learn) { return console.error("====== learnPowerfullSpells: " + learn.delta + " " + learn.tomeIndex); });
     if (learnPowerfullSpells.length > 0) {
         return "LEARN " + learnPowerfullSpells.shift().actionId;
+    }
+    // cast spell to get ride of too much tier-0 ingridients
+    if (myInventoryDelta[0] >= 5) {
+        var spellsToReduceTier0 = castableSpells.filter(function (spell) { return (spell.delta[0] < 0); });
+        if (spellsToReduceTier0.length > 0) {
+            return "CAST " + spellsToReduceTier0.shift().actionId;
+        }
     }
     return null;
 };
@@ -206,7 +214,7 @@ while (true) {
     var spellToCast = chooseSpell(orders, myInventory, castableSpells);
     var learnSpell = chooseSpellToLearn(learnSpells, myInventory);
     var spamSpell = spellInventorySpam(spellToCast, myInventory);
-    var specialActions = performSpecialActions(orders, myInventory, learnSpells);
+    var specialActions = performSpecialActions(orders, myInventory, learnSpells, castableSpells);
     // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
     if (afordableOrders.length > 0) {
         afordableOrders.forEach(function (element) {
