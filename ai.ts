@@ -1,7 +1,4 @@
-const initAction = {
-    actionId: 0,
-    price: 0
-};
+// types
 
 type actionTypes = "BREW" | "CAST";
 
@@ -18,11 +15,21 @@ type Spell = {
     repeatable: boolean;
 };
 
+type Recipes = (Order | Spell)[];
+
+
+// initial values
+
+const initAction = {
+    actionId: 0,
+    price: 0
+};
+let nextAction = initAction;
 let orders: Order[] = [];
 let spells: Spell[] = [];
 let userData: any[];
 
-type Recipes = (Order | Spell)[];
+// functinos
 
 const filterAfordableRecipies = (recipes: Recipes, myInventoryDelta: number[]): Recipes => {
   return recipes.filter(recipe => {
@@ -38,7 +45,14 @@ const filterCastableSpells = (spells: Spell[]): Spell[] => {
   return spells.filter(spell => spell.castable);
 }
 
-let nextAction = initAction;
+const maxInventoryDeltaIngredient = (inventoryDelta: number[]): number => {
+  return inventoryDelta.indexOf(Math.max(...inventoryDelta));
+}
+
+const randomSpell = (castableSpells: spell[]): spell => {
+  const randomIndex = Math.floor(Math.random() * castableSpells.length);
+  return castableSpells[randomIndex];
+}
 
 // game loop
 while (true) {
@@ -125,9 +139,7 @@ while (true) {
       // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
       console.log('BREW ' + nextAction.actionId);
     } else if (afordableSpells.length > 0 && castableSpells.length > 1) {
-
-      const spellIndex: number = Math.floor(Math.random() * castableSpells.length);
-      console.log('CAST ' + castableSpells[spellIndex].actionId);
+      console.log('CAST ' + randomSpell(castableSpells).actionId);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
 
