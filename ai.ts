@@ -1,63 +1,91 @@
-// types
+  // types
 
-type Delta = number[];
+  type Delta = number[];
 
-type Order = {
+  type Order = {
+      actionId: number;
+      delta: Delta;
+      price: number;
+  };
+
+  type Spell = {
+      actionId: number;
+      delta: Delta;
+      castable: boolean;
+      repeatable: boolean;
+  };
+
+  type Learn = {
     actionId: number;
     delta: Delta;
-    price: number;
-};
+  }
 
-type Spell = {
-    actionId: number;
-    delta: Delta;
-    castable: boolean;
-    repeatable: boolean;
-};
+  type Recipes = (Order | Spell)[];
 
-type Learn = {
-  actionId: number;
-  delta: Delta;
+
+  // initial values
+
+  const initAction = {
+      actionId: 0,
+      price: 0
+  };
+  let nextAction = initAction;
+  let orders: Order[] = [];
+  let spells: Spell[] = [];
+  let learnSpells: Learn[] = [];
+  let userData: any[];
+
+  // functinos
+
+  const filterAfordableRecipies = (recipes: Recipes, myInventoryDelta: Delta): Recipes => {
+    return recipes.filter(recipe => {
+        return (checkMissingIngredients(recipe.delta, myInventoryDelta).length === 0);
+    });
+  }
+
+  const filterCastableSpells = (spells: Spell[]): Spell[] => {
+    return spells.filter(spell => spell.castable);
+  }
+
+  const maxInventoryDeltaIngredient = (inventoryDelta: Delta): number => {
+    return inventoryDelta.indexOf(Math.max(...inventoryDelta));
+  }
+
+  // Strategy 1
+  const randomSpell = (castableSpells: Spell[]): Spell => {
+    const randomIndex = Math.floor(Math.random() * castableSpells.length);
+    return castableSpells[randomIndex];
+  }
+
+// Strategy 2
+const chooseSpell = (orders: Order[], myInventoryDelta: Delta, spells: Spell[]): Spell => {
+  // 1. pick first order with bonus points from the queue
+  // 2. check delta for what's missing
+  // 3. search for spells that can yeald needed ingredients
+
+  const firstOrder = orders[0];
+
+  return randomSpell(spells); // for now ...
 }
 
-type Recipes = (Order | Spell)[];
+// checkes for missing inventory ingredients for given delta
+const checkMissingIngredients = (delta: Delta, myInventoryDelta: Delta): number[] => {
+  const missingIngredientsIndex = [];
 
+  if ((delta[0] + myInventoryDelta[0]) < 0) {
+    missingIngredientsIndex.push(0);
+  }
+  if ((delta[1] + myInventoryDelta[1]) < 0) {
+    missingIngredientsIndex.push(1);
+  }
+  if ((delta[2] + myInventoryDelta[2]) < 0) {
+    missingIngredientsIndex.push(2);
+  }
+  if ((delta[3] + myInventoryDelta[3]) < 0) {
+    missingIngredientsIndex.push(3);
+  }
 
-// initial values
-
-const initAction = {
-    actionId: 0,
-    price: 0
-};
-let nextAction = initAction;
-let orders: Order[] = [];
-let spells: Spell[] = [];
-let learnSpells: Learn[] = [];
-let userData: any[];
-
-// functinos
-
-const filterAfordableRecipies = (recipes: Recipes, myInventoryDelta: number[]): Recipes => {
-  return recipes.filter(recipe => {
-      if ((recipe.delta[0] + myInventoryDelta[0]) < 0) return false;
-      if ((recipe.delta[1] + myInventoryDelta[1]) < 0) return false;
-      if ((recipe.delta[2] + myInventoryDelta[2]) < 0) return false;
-      if ((recipe.delta[3] + myInventoryDelta[3]) < 0) return false;
-      return true;
-  });
-}
-
-const filterCastableSpells = (spells: Spell[]): Spell[] => {
-  return spells.filter(spell => spell.castable);
-}
-
-const maxInventoryDeltaIngredient = (inventoryDelta: number[]): number => {
-  return inventoryDelta.indexOf(Math.max(...inventoryDelta));
-}
-
-const randomSpell = (castableSpells: Spell[]): Spell => {
-  const randomIndex = Math.floor(Math.random() * castableSpells.length);
-  return castableSpells[randomIndex];
+  return missingIngredientsIndex;
 }
 
 const spellInventorySpam = (spell: Spell, inventoryDelta: number[]): boolean => {
@@ -168,6 +196,7 @@ while (true) {
     } else if (castableSpells.length > 1) {
 
       const spellToCast = randomSpell(castableSpells);
+
       if (spellInventorySpam(spellToCast, userData[0].inventoryDelta)) {
         console.log('LEARN ' + learnSpells[0].actionId);
       } else {
