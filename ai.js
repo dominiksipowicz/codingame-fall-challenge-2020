@@ -52,18 +52,24 @@ var chooseSpell = function (orders, myInventoryDelta, castableSpells) {
     return randomSpell(castableSpells); // fallback
 };
 var chooseSpellToLearn = function (learnSpells, inventoryDelta) {
+    var filter0InventoryTome = function (learnSpell) {
+        return learnSpell.tomeIndex < inventoryDelta[0];
+    };
     var maxIngredientIndex = maxInventoryDeltaIngredient(inventoryDelta);
-    var filteredLearnSpells = learnSpells.filter(function (learnSpell) {
+    var filteredLearnSpells = learnSpells
+        .filter(function (learnSpell) {
         return learnSpell.delta[maxIngredientIndex] < 0;
-    });
+    })
+        .filter(filter0InventoryTome);
     if (filteredLearnSpells.length > 0) {
         return filteredLearnSpells.pop();
     }
-    var cheapHigherIngredientsSpells = chooseHigherIngredientsSpells(learnSpells);
+    var cheapHigherIngredientsSpells = chooseHigherIngredientsSpells(learnSpells)
+        .filter(filter0InventoryTome);
     if (cheapHigherIngredientsSpells.length > 0) {
         return cheapHigherIngredientsSpells.pop();
     }
-    return learnSpells.pop(); // just take the last one as a fallback
+    return learnSpells.filter(filter0InventoryTome).pop(); // just take the last one as a fallback
 };
 var chooseHigherIngredientsSpells = function (learnSpells) {
     return learnSpells
@@ -111,6 +117,24 @@ var spellInventorySpam = function (spell, inventoryDelta) {
     }
     return false;
 };
+// strategy 3 - aha! custom shit ust to get a bit of headstart
+var performSpecialActions = function (orders, myInventoryDelta, learnSpells) {
+    var filter0InventoryTome = function (learnSpell) {
+        return learnSpell.tomeIndex < myInventoryDelta[0];
+    };
+    var canAffordIt = function (learn) { return (learn.tomeIndex < 2 || learn.tomeIndex < myInventoryDelta[0]); };
+    var cmpDelta = function (learn, delta) { return learn.delta.toString() === delta.toString(); };
+    // Lear quickly a very powerful spells
+    var powerfulSpellDeltas = function (learn) { return (cmpDelta(learn, [1, 0, 1, 0])
+        || cmpDelta(learn, [0, 0, 1, 0])); };
+    var learnPowerfullSpells = learnSpells
+        .filter(function (learn) { return (powerfulSpellDeltas(learn) && canAffordIt(learn)); });
+    learnPowerfullSpells.map(function (learn) { return console.error("====== learnPowerfullSpells: " + learn.delta + " " + learn.tomeIndex); });
+    if (learnPowerfullSpells.length > 0) {
+        return "LEARN " + learnPowerfullSpells.shift().actionId;
+    }
+    return null;
+};
 // game loop
 while (true) {
     // reset variables
@@ -151,7 +175,8 @@ while (true) {
         if (actionType === "LEARN") {
             learnSpells.push({
                 actionId: actionId,
-                delta: [delta0, delta1, delta2, delta3]
+                delta: [delta0, delta1, delta2, delta3],
+                tomeIndex: tomeIndex
             });
         }
     }
@@ -174,12 +199,14 @@ while (true) {
         };
         userData.push(userDataRow);
     }
-    var afordableOrders = filterAfordableRecipies(orders, userData[0].inventoryDelta);
-    var afordableSpells = filterAfordableRecipies(spells, userData[0].inventoryDelta);
+    var myInventory = userData[0].inventoryDelta;
+    var afordableOrders = filterAfordableRecipies(orders, myInventory);
+    var afordableSpells = filterAfordableRecipies(spells, myInventory);
     var castableSpells = filterCastableSpells(afordableSpells);
-    var spellToCast = chooseSpell(orders, userData[0].inventoryDelta, castableSpells);
-    var learnSpell = chooseSpellToLearn(learnSpells, userData[0].inventoryDelta);
-    var spamSpell = spellInventorySpam(spellToCast, userData[0].inventoryDelta);
+    var spellToCast = chooseSpell(orders, myInventory, castableSpells);
+    var learnSpell = chooseSpellToLearn(learnSpells, myInventory);
+    var spamSpell = spellInventorySpam(spellToCast, myInventory);
+    var specialActions = performSpecialActions(orders, myInventory, learnSpells);
     // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
     if (afordableOrders.length > 0) {
         afordableOrders.forEach(function (element) {
@@ -192,10 +219,13 @@ while (true) {
         });
         console.log('BREW ' + nextAction.actionId);
     }
+    else if (specialActions !== null) {
+        console.log(specialActions);
+    }
     else if (castableSpells.length > 0 && spamSpell === false) {
         console.log('CAST ' + spellToCast.actionId);
     }
-    else if (castableSpells.length > 0 && spamSpell === true) {
+    else if (castableSpells.length > 1 && spamSpell === true && learnSpell) {
         console.log('LEARN ' + learnSpell.actionId);
         console.error("learnSpell tomeIndex: " + learnSpell.tomeIndex);
     }

@@ -164,6 +164,34 @@ const spellInventorySpam = (spell: Spell | null, inventoryDelta: number[]): bool
   return false;
 }
 
+// strategy 3 - aha! custom shit ust to get a bit of headstart
+const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSpells: Learn[]): string | null => {
+
+    const filter0InventoryTome = learnSpell => {
+        return learnSpell.tomeIndex < myInventoryDelta[0];
+    }
+
+    const canAffordIt = learn => (learn.tomeIndex < 2 || learn.tomeIndex < myInventoryDelta[0])
+    const cmpDelta = (learn: Learn, delta: Delta) => learn.delta.toString() === delta.toString()
+
+    // Lear quickly a very powerful spells
+    const powerfulSpellDeltas = learn => (
+        cmpDelta(learn, [1,0,1,0])
+        || cmpDelta(learn, [0,0,1,0])
+    );
+
+    const learnPowerfullSpells = learnSpells
+        .filter(learn => (powerfulSpellDeltas(learn) && canAffordIt(learn)));
+
+    learnPowerfullSpells.map(learn => console.error(`====== learnPowerfullSpells: ` + learn.delta + ` ` + learn.tomeIndex))
+
+    if (learnPowerfullSpells.length > 0) {
+        return `LEARN ${learnPowerfullSpells.shift().actionId}`
+    }
+
+    return null;
+}
+
 // game loop
 while (true) {
 
@@ -238,13 +266,15 @@ while (true) {
         }
         userData.push(userDataRow)
     }
+    const myInventory = userData[0].inventoryDelta;
 
-    const afordableOrders = filterAfordableRecipies(orders, userData[0].inventoryDelta) as Order[];
-    const afordableSpells = filterAfordableRecipies(spells, userData[0].inventoryDelta) as Spell[];
+    const afordableOrders = filterAfordableRecipies(orders, myInventory) as Order[];
+    const afordableSpells = filterAfordableRecipies(spells, myInventory) as Spell[];
     const castableSpells = filterCastableSpells(afordableSpells);
-    const spellToCast = chooseSpell(orders, userData[0].inventoryDelta, castableSpells);
-    const learnSpell = chooseSpellToLearn(learnSpells, userData[0].inventoryDelta);
-    const spamSpell = spellInventorySpam(spellToCast, userData[0].inventoryDelta);
+    const spellToCast = chooseSpell(orders, myInventory, castableSpells);
+    const learnSpell = chooseSpellToLearn(learnSpells, myInventory);
+    const spamSpell = spellInventorySpam(spellToCast, myInventory);
+    const specialActions = performSpecialActions(orders, myInventory, learnSpells);
 
     // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
 
@@ -259,9 +289,11 @@ while (true) {
         }
       });
       console.log('BREW ' + nextAction.actionId);
+    } else if (specialActions !== null) {
+      console.log(specialActions);
     } else if (castableSpells.length > 0 && spamSpell === false) {
       console.log('CAST ' + spellToCast.actionId);
-    } else if (castableSpells.length > 0 && spamSpell === true && learnSpell) {
+    } else if (castableSpells.length > 1 && spamSpell === true && learnSpell) {
       console.log('LEARN ' + learnSpell.actionId);
       console.error(`learnSpell tomeIndex: ` + learnSpell.tomeIndex);
     } else {
