@@ -1,17 +1,24 @@
 // types
 
+type Delta = number[];
+
 type Order = {
     actionId: number;
-    delta: number[];
+    delta: Delta;
     price: number;
 };
 
 type Spell = {
     actionId: number;
-    delta: number[];
+    delta: Delta;
     castable: boolean;
     repeatable: boolean;
 };
+
+type Learn = {
+  actionId: number;
+  delta: Delta;
+}
 
 type Recipes = (Order | Spell)[];
 
@@ -25,6 +32,7 @@ const initAction = {
 let nextAction = initAction;
 let orders: Order[] = [];
 let spells: Spell[] = [];
+let learnSpells: Learn[] = [];
 let userData: any[];
 
 // functinos
@@ -73,6 +81,7 @@ while (true) {
     orders = [];
     spells = [];
     userData = [];
+    learnSpells = [];
 
     const actionCount: number = parseInt(readline()); // the number of spells and recipes in play
 
@@ -90,7 +99,7 @@ while (true) {
         const castable: boolean = inputs[9] !== '0'; // in the first league: always 0; later: 1 if this is a castable player spell
         const repeatable: boolean = inputs[10] !== '0'; // for the first two leagues: always 0; later: 1 if this is a repeatable player spell
 
-        if (actionType == "BREW") {
+        if (actionType === "BREW") {
             orders.push({
                 actionId,
                 delta: [delta0, delta1, delta2, delta3],
@@ -98,12 +107,19 @@ while (true) {
             });
         }
 
-        if (actionType == "CAST") {
+        if (actionType === "CAST") {
             spells.push({
                 actionId,
                 delta: [delta0, delta1, delta2, delta3],
                 castable,
                 repeatable
+            });
+        }
+
+        if (actionType === "LEARN") {
+            learnSpells.push({
+                actionId,
+                delta: [delta0, delta1, delta2, delta3]
             });
         }
     }
@@ -151,12 +167,13 @@ while (true) {
       console.log('BREW ' + nextAction.actionId);
     } else if (afordableSpells.length > 0 && castableSpells.length > 1) {
 
-      let spellToCast = randomSpell(castableSpells);
+      const spellToCast = randomSpell(castableSpells);
       if (spellInventorySpam(spellToCast, userData[0].inventoryDelta)) {
-        spellToCast = randomSpell(castableSpells);
+        console.log('LEARN ' + learnSpells[0].actionId);
+      } else {
+        console.log('CAST ' + spellToCast.actionId);
       }
 
-      console.log('CAST ' + spellToCast.actionId);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
 
@@ -171,6 +188,7 @@ while (true) {
     console.error(`afordableSpells: ` + afordableSpells.length);
     console.error(`myInventoryDelta: ` + userData[0].inventoryDelta);
     console.error(`castableSpells: ` + castableSpells.length);
+    console.error(`LearnSpells: ` + learnSpells.length);
     console.error(`=========`);
 
 
