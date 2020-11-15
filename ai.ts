@@ -114,7 +114,7 @@ const chooseSpellToLearn = (learnSpells: Learn[], inventoryDelta: Delta): Learn 
     return cheapHigherIngredientsSpells.pop();
   }
 
-  return learnSpells.filter(filter0InventoryTome).pop(); // just take the last one as a fallback
+  return null; // don't jut learn whatever... it can backfire
 }
 
 const chooseHigherIngredientsSpells = (learnSpells: Learn[]): Learn[] => {
@@ -183,6 +183,7 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
         cmpDelta(learn, [1,0,1,0])
         || cmpDelta(learn, [0,0,1,0])
         || cmpDelta(learn, [2,1,0,0])
+        || cmpDelta(learn, [0,2,0,0])
     );
 
     const learnPowerfullSpells = learnSpells
