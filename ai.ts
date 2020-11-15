@@ -14,6 +14,7 @@ type Order = {
 type Spell = {
     actionId: number;
     delta: number[];
+    castable: boolean;
 };
 
 let orders: Order[] = [];
@@ -22,22 +23,18 @@ let userData: any[];
 
 type Recipes = (Order | Spell)[];
 
-const filterRecipies = (recipes: Recipes, myInventoryDelta: number[]): Recipes => {
+const filterAfordableRecipies = (recipes: Recipes, myInventoryDelta: number[]): Recipes => {
   return recipes.filter(recipe => {
-      console.error(`====`);
-      console.error(`recipe:` + recipe.delta);
-      console.error(`myInventoryDelta:` + myInventoryDelta);
-      console.error(`suma0 = ` + (recipe.delta[0] + myInventoryDelta[0]));
-      console.error(`suma1 = ` + (recipe.delta[1] + myInventoryDelta[1]));
-      console.error(`suma2 = ` + (recipe.delta[2] + myInventoryDelta[2]));
-      console.error(`suma3 = ` + (recipe.delta[3] + myInventoryDelta[3]));
-
       if ((recipe.delta[0] + myInventoryDelta[0]) < 0) return false;
       if ((recipe.delta[1] + myInventoryDelta[1]) < 0) return false;
       if ((recipe.delta[2] + myInventoryDelta[2]) < 0) return false;
       if ((recipe.delta[3] + myInventoryDelta[3]) < 0) return false;
       return true;
   });
+}
+
+const filterCastableSpells = (spells: Spell[]): Spell[] => {
+  return spells.filter(spell => spell.castable);
 }
 
 let nextAction = initAction;
@@ -78,7 +75,8 @@ while (true) {
         if (actionType == "CAST") {
             spells.push({
                 actionId,
-                delta: [delta0, delta1, delta2, delta3]
+                delta: [delta0, delta1, delta2, delta3],
+                castable
             });
         }
     }
@@ -106,8 +104,9 @@ while (true) {
         userData.push(userDataRow)
     }
 
-    const afordableOrders = filterRecipies(orders, userData[0].inventoryDelta) as Order[];
-    const afordableSpells = filterRecipies(spells, userData[0].inventoryDelta) as Spell[];
+    const afordableOrders = filterAfordableRecipies(orders, userData[0].inventoryDelta) as Order[];
+    const afordableSpells = filterAfordableRecipies(spells, userData[0].inventoryDelta) as Spell[];
+    const castableSpells = filterCastableSpells(afordableSpells);
 
     if (afordableOrders.length > 0) {
       afordableOrders.forEach(element => {
@@ -123,8 +122,8 @@ while (true) {
     if (nextAction.price > 0) {
       // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
       console.log('BREW ' + nextAction.actionId);
-    } else if (afordableSpells.length > 0) {
-      console.log('CAST ' + afordableSpells[0].actionId);
+    } else if (afordableSpells.length > 0 && castableSpells.length > 0) {
+      console.log('CAST ' + castableSpells[0].actionId);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
 
@@ -138,6 +137,7 @@ while (true) {
     console.error(`spellsAvailable: ` + spells.length);
     console.error(`afordableSpells: ` + afordableSpells.length);
     console.error(`myInventoryDelta: ` + userData[0].inventoryDelta);
+    console.error(`castableSpells: ` + castableSpells.length);
     console.error(`=========`);
 
 
