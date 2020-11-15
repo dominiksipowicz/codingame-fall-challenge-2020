@@ -165,7 +165,7 @@ const spellInventorySpam = (spell: Spell | null, inventoryDelta: number[]): bool
 }
 
 // strategy 3 - aha! custom shit ust to get a bit of headstart
-const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSpells: Learn[]): string | null => {
+const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSpells: Learn[], castableSpells: Spell[]): string | null => {
 
     const filter0InventoryTome = learnSpell => {
         return learnSpell.tomeIndex < myInventoryDelta[0];
@@ -174,10 +174,11 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
     const canAffordIt = learn => (learn.tomeIndex < 2 || learn.tomeIndex < myInventoryDelta[0])
     const cmpDelta = (learn: Learn, delta: Delta) => learn.delta.toString() === delta.toString()
 
-    // Lear quickly a very powerful spells
+    // Learn quickly a very powerful spells
     const powerfulSpellDeltas = learn => (
         cmpDelta(learn, [1,0,1,0])
         || cmpDelta(learn, [0,0,1,0])
+        || cmpDelta(learn, [2,1,0,0])
     );
 
     const learnPowerfullSpells = learnSpells
@@ -187,6 +188,15 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
 
     if (learnPowerfullSpells.length > 0) {
         return `LEARN ${learnPowerfullSpells.shift().actionId}`
+    }
+
+    // cast spell to get ride of too much tier-0 ingridients
+
+    if (myInventoryDelta[0] >= 5) {
+        const spellsToReduceTier0 = castableSpells.filter(spell => (spell.delta[0] < 0));
+        if (spellsToReduceTier0.length > 0) {
+            return `CAST ${spellsToReduceTier0.shift().actionId}`
+        }
     }
 
     return null;
@@ -274,7 +284,7 @@ while (true) {
     const spellToCast = chooseSpell(orders, myInventory, castableSpells);
     const learnSpell = chooseSpellToLearn(learnSpells, myInventory);
     const spamSpell = spellInventorySpam(spellToCast, myInventory);
-    const specialActions = performSpecialActions(orders, myInventory, learnSpells);
+    const specialActions = performSpecialActions(orders, myInventory, learnSpells, castableSpells);
 
     // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
 
