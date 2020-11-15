@@ -208,7 +208,7 @@ while (true) {
       });
       console.log('BREW ' + nextAction.actionId);
 
-    } else if (castableSpells.length > 1) {
+    } else if (castableSpells.length > 0) {
 
       // const spellToCast = randomSpell(castableSpells);
       const spellToCast = chooseSpell(orders, userData[0].inventoryDelta, castableSpells);
@@ -229,9 +229,9 @@ while (true) {
     console.error(`=========`);
     console.error(`afordableOrders: ` + afordableOrders.length);
     console.error(`spellsAvailable: ` + spells.length);
-    console.error(`afordableSpells: ` + afordableSpells.length);
+    console.error(`afordableSpells: ` + afordableSpells.map(spell => spell.actionId));
     console.error(`myInventoryDelta: ` + userData[0].inventoryDelta);
-    console.error(`castableSpells: ` + castableSpells.length);
+    console.error(`castableSpells: ` + castableSpells.map(spell => spell.actionId));
     console.error(`LearnSpells: ` + learnSpells.length);
     console.error(`=========`);
 
