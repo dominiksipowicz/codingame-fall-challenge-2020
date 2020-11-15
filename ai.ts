@@ -1,7 +1,5 @@
 // types
 
-type actionTypes = "BREW" | "CAST";
-
 type Order = {
     actionId: number;
     delta: number[];
@@ -49,9 +47,22 @@ const maxInventoryDeltaIngredient = (inventoryDelta: number[]): number => {
   return inventoryDelta.indexOf(Math.max(...inventoryDelta));
 }
 
-const randomSpell = (castableSpells: spell[]): spell => {
+const randomSpell = (castableSpells: Spell[]): Spell => {
   const randomIndex = Math.floor(Math.random() * castableSpells.length);
   return castableSpells[randomIndex];
+}
+
+const spellInventorySpam = (spell: Spell, inventoryDelta: number[]): boolean => {
+  const maxIngredientIndex = maxInventoryDeltaIngredient(inventoryDelta);
+  const maxInventoryIngedientValue = inventoryDelta[maxIngredientIndex];
+  if (maxInventoryIngedientValue < 5) {
+    return false;
+  }
+  const spellIngedientValue = spell.delta[maxIngredientIndex];
+  if (spellIngedientValue > 0) {
+    return true;
+  }
+  return false;
 }
 
 // game loop
@@ -139,7 +150,13 @@ while (true) {
       // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
       console.log('BREW ' + nextAction.actionId);
     } else if (afordableSpells.length > 0 && castableSpells.length > 1) {
-      console.log('CAST ' + randomSpell(castableSpells).actionId);
+
+      let spellToCast = randomSpell(castableSpells);
+      if (spellInventorySpam(spellToCast, userData[0].inventoryDelta)) {
+        spellToCast = randomSpell(castableSpells);
+      }
+
+      console.log('CAST ' + spellToCast.actionId);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
 
