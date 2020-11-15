@@ -93,7 +93,29 @@ const chooseSpellToLearn = (learnSpells: Learn[], inventoryDelta: Delta): Learn 
     return filteredLearnSpells.pop();
   }
 
+  const cheapHigherIngredientsSpells = chooseHigherIngredientsSpells(learnSpells);
+
+  if (cheapHigherIngredientsSpells.length > 0) {
+    return cheapHigherIngredientsSpells.pop();
+  }
+
   return learnSpells.pop(); // just take the last one as a fallback
+}
+
+const chooseHigherIngredientsSpells = (learnSpells: Learn[]): Learn[] => {
+  return learnSpells
+    .filter(learnSpell => { // choose only last two ingredients
+      if (learnSpell.delta[3] > 0 || learnSpell.delta[2] > 0) {
+        return true;
+      }
+      return false;
+    })
+    .filter(learnSpell => { // make some savings here...
+      if (learnSpell.delta[1] >= 0 && learnSpell.delta[3] >= 0 && learnSpell.delta[0] > -2) {
+        return true;
+      }
+      return false;
+    });
 }
 
 // checkes for missing inventory ingredients for given delta
