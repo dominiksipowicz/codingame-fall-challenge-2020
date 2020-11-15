@@ -151,7 +151,10 @@ while (true) {
     const afordableSpells = filterAfordableRecipies(spells, userData[0].inventoryDelta) as Spell[];
     const castableSpells = filterCastableSpells(afordableSpells);
 
+    // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
+
     if (afordableOrders.length > 0) {
+
       afordableOrders.forEach(element => {
         if (element.price > nextAction.price ) {
             nextAction = {
@@ -160,12 +163,9 @@ while (true) {
             }
         }
       });
-    }
-
-    if (nextAction.price > 0) {
-      // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
       console.log('BREW ' + nextAction.actionId);
-    } else if (afordableSpells.length > 0 && castableSpells.length > 1) {
+
+    } else if (castableSpells.length > 1) {
 
       const spellToCast = randomSpell(castableSpells);
       if (spellInventorySpam(spellToCast, userData[0].inventoryDelta)) {
@@ -176,7 +176,6 @@ while (true) {
 
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
-
     }
 
 
