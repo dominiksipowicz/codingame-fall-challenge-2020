@@ -18,6 +18,7 @@ type Spell = {
 type Learn = {
   actionId: number;
   delta: Delta;
+  tomeIndex: number;
 }
 
 type Recipes = (Order | Spell)[];
@@ -58,7 +59,7 @@ const randomSpell = (castableSpells: Spell[]): Spell => {
 }
 
 // Strategy 2
-const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: Spell[]): Spell => {
+const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: Spell[]): Spell | null => {
   // 1. pick first order with bonus points from the queue
   // 2. check delta for what's missing
   // 3. search for spells that can yeald needed ingredients
@@ -80,26 +81,36 @@ const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: S
     return neededIngridientsSpells.pop();
   }
 
+  if (castableSpells.length === 0) {
+    return null;
+  }
+
   return randomSpell(castableSpells); // fallback
 }
 
-const chooseSpellToLearn = (learnSpells: Learn[], inventoryDelta: Delta): Learn => {
+const chooseSpellToLearn = (learnSpells: Learn[], inventoryDelta: Delta): Learn | null => {
+  const filter0InventoryTome = learnSpell => {
+    return learnSpell.tomeIndex < inventoryDelta[0];
+  }
   const maxIngredientIndex = maxInventoryDeltaIngredient(inventoryDelta);
-  const filteredLearnSpells = learnSpells.filter(learnSpell => {
-    return learnSpell.delta[maxIngredientIndex] < 0;
-  });
+  const filteredLearnSpells = learnSpells
+    .filter(learnSpell => {
+      return learnSpell.delta[maxIngredientIndex] < 0;
+    })
+    .filter(filter0InventoryTome);
 
   if (filteredLearnSpells.length > 0) {
     return filteredLearnSpells.pop();
   }
 
-  const cheapHigherIngredientsSpells = chooseHigherIngredientsSpells(learnSpells);
+  const cheapHigherIngredientsSpells = chooseHigherIngredientsSpells(learnSpells)
+    .filter(filter0InventoryTome);
 
   if (cheapHigherIngredientsSpells.length > 0) {
     return cheapHigherIngredientsSpells.pop();
   }
 
-  return learnSpells.pop(); // just take the last one as a fallback
+  return learnSpells.filter(filter0InventoryTome).pop(); // just take the last one as a fallback
 }
 
 const chooseHigherIngredientsSpells = (learnSpells: Learn[]): Learn[] => {
@@ -138,10 +149,12 @@ const checkMissingIngredients = (delta: Delta, myInventoryDelta: Delta): number[
   return missingIngredientsIndexes;
 }
 
-const spellInventorySpam = (spell: Spell, inventoryDelta: number[]): boolean => {
+const spellInventorySpam = (spell: Spell | null, inventoryDelta: number[]): boolean => {
+  if (spell === null) return false;
+
   const maxIngredientIndex = maxInventoryDeltaIngredient(inventoryDelta);
   const maxInventoryIngredientValue = inventoryDelta[maxIngredientIndex];
-  if (maxInventoryIngredientValue < 5) {
+  if (maxInventoryIngredientValue < 4) {
     return false;
   }
   const spellIngedientValue = spell.delta[maxIngredientIndex];
@@ -197,7 +210,8 @@ while (true) {
         if (actionType === "LEARN") {
             learnSpells.push({
                 actionId,
-                delta: [delta0, delta1, delta2, delta3]
+                delta: [delta0, delta1, delta2, delta3],
+                tomeIndex
             });
         }
     }
@@ -247,15 +261,14 @@ while (true) {
       console.log('BREW ' + nextAction.actionId);
     } else if (castableSpells.length > 0 && spamSpell === false) {
       console.log('CAST ' + spellToCast.actionId);
-    } else if (castableSpells.length > 0 && spamSpell === true) {
+    } else if (castableSpells.length > 0 && spamSpell === true && learnSpell) {
       console.log('LEARN ' + learnSpell.actionId);
+      console.error(`learnSpell tomeIndex: ` + learnSpell.tomeIndex);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
     }
 
-
-    // Write an action using console.log()
-    // To debug: console.error('Debug messages...');
+    // debug
     console.error(`=========`);
     console.error(`afordableOrders: ` + afordableOrders.length);
     console.error(`spellsAvailable: ` + spells.length);
@@ -264,6 +277,7 @@ while (true) {
     console.error(`castableSpells: ` + castableSpells.map(spell => spell.actionId));
     console.error(`LearnSpells: ` + learnSpells.length);
     console.error(`repeatable: ` + castableSpells.filter(spell => spell.repeatable).map(spell => spell.actionId));
+    console.error(`spellToCast: ` + spellToCast);
     console.error(`=========`);
 
 
