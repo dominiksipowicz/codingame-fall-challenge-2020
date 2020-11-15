@@ -83,6 +83,19 @@ const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: S
   return randomSpell(spells); // fallback
 }
 
+const chooseSpellToLearn = (learnSpells: Learn[], inventoryDelta: Delta): Learn => {
+  const maxIngredientIndex = maxInventoryDeltaIngredient(inventoryDelta);
+  const filteredLearnSpells = learnSpells.filter(learnSpell => {
+    return learnSpell.delta[maxIngredientIndex] < 0;
+  });
+
+  if (filteredLearnSpells.length > 0) {
+    return filteredLearnSpells.pop();
+  }
+
+  return learnSpells.pop(); // just take the last one as a fallback
+}
+
 // checkes for missing inventory ingredients for given delta
 const checkMissingIngredients = (delta: Delta, myInventoryDelta: Delta): number[] => {
   const missingIngredientsIndexes = [];
@@ -105,8 +118,8 @@ const checkMissingIngredients = (delta: Delta, myInventoryDelta: Delta): number[
 
 const spellInventorySpam = (spell: Spell, inventoryDelta: number[]): boolean => {
   const maxIngredientIndex = maxInventoryDeltaIngredient(inventoryDelta);
-  const maxInventoryIngedientValue = inventoryDelta[maxIngredientIndex];
-  if (maxInventoryIngedientValue < 5) {
+  const maxInventoryIngredientValue = inventoryDelta[maxIngredientIndex];
+  if (maxInventoryIngredientValue < 5) {
     return false;
   }
   const spellIngedientValue = spell.delta[maxIngredientIndex];
@@ -214,7 +227,10 @@ while (true) {
       const spellToCast = chooseSpell(orders, userData[0].inventoryDelta, castableSpells);
 
       if (spellInventorySpam(spellToCast, userData[0].inventoryDelta)) {
-        console.log('LEARN ' + learnSpells[0].actionId);
+
+        const learnSpell = chooseSpellToLearn(learnSpells, userData[0].inventoryDelta);
+        console.log('LEARN ' + learnSpell.actionId);
+
       } else {
         console.log('CAST ' + spellToCast.actionId);
       }
