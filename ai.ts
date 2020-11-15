@@ -15,6 +15,7 @@ type Spell = {
     actionId: number;
     delta: number[];
     castable: boolean;
+    repeatable: boolean;
 };
 
 let orders: Order[] = [];
@@ -76,7 +77,8 @@ while (true) {
             spells.push({
                 actionId,
                 delta: [delta0, delta1, delta2, delta3],
-                castable
+                castable,
+                repeatable
             });
         }
     }
@@ -122,7 +124,7 @@ while (true) {
     if (nextAction.price > 0) {
       // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
       console.log('BREW ' + nextAction.actionId);
-    } else if (afordableSpells.length > 0 && castableSpells.length > 0) {
+    } else if (afordableSpells.length > 0 && castableSpells.length > 1) {
 
       const spellIndex: number = Math.floor(Math.random() * castableSpells.length);
       console.log('CAST ' + castableSpells[spellIndex].actionId);
