@@ -123,7 +123,9 @@ while (true) {
       // in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
       console.log('BREW ' + nextAction.actionId);
     } else if (afordableSpells.length > 0 && castableSpells.length > 0) {
-      console.log('CAST ' + castableSpells[0].actionId);
+
+      const spellIndex: number = Math.floor(Math.random() * castableSpells.length);
+      console.log('CAST ' + castableSpells[spellIndex].actionId);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
 
