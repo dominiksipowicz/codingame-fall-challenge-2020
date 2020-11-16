@@ -217,6 +217,15 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
         }
     }
 
+    // unblock rest scenario
+    if (restClock > 3) {
+        const maxIngredientIndex = maxInventoryDeltaIngredient(myInventoryDelta);
+        const castSpellToReduceMaxIngredient = castableSpells.filter(spell => spell.delta[maxIngredientIndex] < 0);
+        if (castSpellToReduceMaxIngredient.length > 0) {
+            return `CAST ${castSpellToReduceMaxIngredient.shift().actionId}`
+        }
+    }
+
     return null;
 }
 
