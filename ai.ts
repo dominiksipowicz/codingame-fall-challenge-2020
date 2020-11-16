@@ -230,6 +230,10 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
         }
     }
 
+    if (restClock > 4) {
+        return `CAST ${randomSpell(castableSpells).actionId}`
+    }
+
     return null;
 }
 
