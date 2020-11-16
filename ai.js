@@ -25,6 +25,9 @@ var maxInventoryDeltaIngredient = function (inventoryDelta) {
 var calculateEffort = function (order) {
     return order.delta[0] + order.delta[1] * 2 + order.delta[2] * 3 + order.delta[3] * 4;
 };
+var inventoryValue = function (delta) {
+    return delta[0] + delta[1] + delta[2] + delta[3];
+};
 // Strategy 1
 var randomSpell = function (castableSpells) {
     var randomIndex = Math.floor(Math.random() * castableSpells.length);
@@ -151,6 +154,24 @@ var performSpecialActions = function (orders, myInventoryDelta, learnSpells, cas
             return "CAST " + spellsToReduceTier0.shift().actionId;
         }
     }
+    // cast spell to get ride of too much tier-1 ingridients
+    if (myInventoryDelta[1] >= 5 && inventoryValue(myInventoryDelta) > 7) {
+        var spellsToReduceTier1 = castableSpells.filter(function (spell) { return (spell.delta[1] < 0); });
+        if (spellsToReduceTier1.length > 0) {
+            return "CAST " + spellsToReduceTier1.shift().actionId;
+        }
+    }
+    // unblock rest scenario
+    if (restClock > 3 || inventoryValue(myInventoryDelta) > 9) {
+        var maxIngredientIndex_1 = maxInventoryDeltaIngredient(myInventoryDelta);
+        var castSpellToReduceMaxIngredient = castableSpells.filter(function (spell) { return spell.delta[maxIngredientIndex_1] < 0; });
+        if (castSpellToReduceMaxIngredient.length > 0) {
+            return "CAST " + castSpellToReduceMaxIngredient.shift().actionId;
+        }
+    }
+    if (restClock > 4) {
+        return "CAST " + randomSpell(castableSpells).actionId;
+    }
     return null;
 };
 // game loop
@@ -262,5 +283,6 @@ while (true) {
     // console.error(`repeatable: ` + castableSpells.filter(spell => spell.repeatable).map(spell => spell.actionId));
     console.error("spellToCast: " + (spellToCast ? spellToCast.actionId : ''));
     console.error("spamSpell: " + spamSpell);
+    console.error("inventoryValue: " + inventoryValue(myInventory));
     console.error("=========");
 }
