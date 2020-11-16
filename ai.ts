@@ -57,6 +57,10 @@ const calculateEffort = order => {
     return order.delta[0] + order.delta[1]*2 + order.delta[2]*3 + order.delta[3]*4;
 }
 
+const inventoryValue = (delta: Delta): number => {
+    return delta[0]+delta[1]+delta[2]+delta[3];
+}
+
 // Strategy 1
 const randomSpell = (castableSpells: Spell[]): Spell => {
   const randomIndex = Math.floor(Math.random() * castableSpells.length);
@@ -218,7 +222,7 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
     }
 
     // unblock rest scenario
-    if (restClock > 3) {
+    if (restClock > 3 || inventoryValue(myInventoryDelta) > 9) {
         const maxIngredientIndex = maxInventoryDeltaIngredient(myInventoryDelta);
         const castSpellToReduceMaxIngredient = castableSpells.filter(spell => spell.delta[maxIngredientIndex] < 0);
         if (castSpellToReduceMaxIngredient.length > 0) {
@@ -349,6 +353,7 @@ while (true) {
     // console.error(`repeatable: ` + castableSpells.filter(spell => spell.repeatable).map(spell => spell.actionId));
     console.error(`spellToCast: ` + (spellToCast ? spellToCast.actionId : ''));
     console.error(`spamSpell: ` + spamSpell);
+    console.error(`inventoryValue: ` + inventoryValue(myInventory));
     console.error(`=========`);
 
 
