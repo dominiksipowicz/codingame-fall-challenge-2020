@@ -214,7 +214,7 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
     }
 
     // cast spell to get ride of too much tier-1 ingridients
-    if (myInventoryDelta[1] > 5) {
+    if (myInventoryDelta[1] >= 5 && inventoryValue(myInventoryDelta) > 7) {
         const spellsToReduceTier1 = castableSpells.filter(spell => (spell.delta[1] < 0));
         if (spellsToReduceTier1.length > 0) {
             return `CAST ${spellsToReduceTier1.shift().actionId}`
