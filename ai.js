@@ -9,6 +9,7 @@ var orders = [];
 var spells = [];
 var learnSpells = [];
 var userData;
+var restClock = 0;
 // functinos
 var filterAfordableRecipies = function (recipes, myInventoryDelta) {
     return recipes.filter(function (recipe) {
@@ -21,6 +22,9 @@ var filterCastableSpells = function (spells) {
 var maxInventoryDeltaIngredient = function (inventoryDelta) {
     return inventoryDelta.indexOf(Math.max.apply(Math, inventoryDelta));
 };
+var calculateEffort = function (order) {
+    return order.delta[0] + order.delta[1] * 2 + order.delta[2] * 3 + order.delta[3] * 4;
+};
 // Strategy 1
 var randomSpell = function (castableSpells) {
     var randomIndex = Math.floor(Math.random() * castableSpells.length);
@@ -28,12 +32,12 @@ var randomSpell = function (castableSpells) {
 };
 // Strategy 2
 var chooseSpell = function (orders, myInventoryDelta, castableSpells) {
-    // 1. pick first order with bonus points from the queue
+    // 1. pick less effort order between 1 and 2
     // 2. check delta for what's missing
     // 3. search for spells that can yeald needed ingredients
     // 4. fallback to random strategy
-    var firstOrder = orders[0];
-    var missingIngredientsIndexes = checkMissingIngredients(firstOrder.delta, myInventoryDelta);
+    var pickedOrder = calculateEffort(orders[0]) <= calculateEffort(orders[1]) ? orders[0] : orders[1];
+    var missingIngredientsIndexes = checkMissingIngredients(pickedOrder.delta, myInventoryDelta);
     var neededIngridientsSpells = castableSpells.filter(function (spell) {
         if (spell.delta[missingIngredientsIndexes[0]] > 0) {
             return true;
@@ -49,7 +53,11 @@ var chooseSpell = function (orders, myInventoryDelta, castableSpells) {
     if (castableSpells.length === 0) {
         return null;
     }
-    return randomSpell(castableSpells); // fallback
+    if (restClock > 0) {
+        restClock = 0;
+        return randomSpell(castableSpells); // fallback
+    }
+    return castableSpells.shift();
 };
 var chooseSpellToLearn = function (learnSpells, inventoryDelta) {
     var filter0InventoryTome = function (learnSpell) {
@@ -69,7 +77,7 @@ var chooseSpellToLearn = function (learnSpells, inventoryDelta) {
     if (cheapHigherIngredientsSpells.length > 0) {
         return cheapHigherIngredientsSpells.pop();
     }
-    return learnSpells.filter(filter0InventoryTome).pop(); // just take the last one as a fallback
+    return null; // don't jut learn whatever... it can backfire
 };
 var chooseHigherIngredientsSpells = function (learnSpells) {
     return learnSpells
@@ -127,7 +135,9 @@ var performSpecialActions = function (orders, myInventoryDelta, learnSpells, cas
     // Learn quickly a very powerful spells
     var powerfulSpellDeltas = function (learn) { return (cmpDelta(learn, [1, 0, 1, 0])
         || cmpDelta(learn, [0, 0, 1, 0])
-        || cmpDelta(learn, [2, 1, 0, 0])); };
+        || cmpDelta(learn, [2, 1, 0, 0])
+        || cmpDelta(learn, [0, 2, 0, 0])
+        || cmpDelta(learn, [1, 0, 1, 0])); };
     var learnPowerfullSpells = learnSpells
         .filter(function (learn) { return (powerfulSpellDeltas(learn) && canAffordIt(learn)); });
     learnPowerfullSpells.map(function (learn) { return console.error("====== learnPowerfullSpells: " + learn.delta + " " + learn.tomeIndex); });
@@ -233,22 +243,24 @@ while (true) {
     else if (castableSpells.length > 0 && spamSpell === false) {
         console.log('CAST ' + spellToCast.actionId);
     }
-    else if (castableSpells.length > 1 && spamSpell === true && learnSpell) {
+    else if (castableSpells.length > 0 && spamSpell === true && learnSpell) {
         console.log('LEARN ' + learnSpell.actionId);
         console.error("learnSpell tomeIndex: " + learnSpell.tomeIndex);
     }
     else {
         console.log('REST'); // what's a different between REST and WAIT?
+        restClock++;
     }
     // debug
     console.error("=========");
-    console.error("afordableOrders: " + afordableOrders.length);
+    // console.error(`afordableOrders: ` + afordableOrders.length);
     console.error("spellsAvailable: " + spells.length);
     console.error("afordableSpells: " + afordableSpells.map(function (spell) { return spell.actionId; }));
-    console.error("myInventoryDelta: " + userData[0].inventoryDelta);
+    // console.error(`myInventoryDelta: ` + userData[0].inventoryDelta);
     console.error("castableSpells: " + castableSpells.map(function (spell) { return spell.actionId; }));
     console.error("LearnSpells: " + learnSpells.length);
-    console.error("repeatable: " + castableSpells.filter(function (spell) { return spell.repeatable; }).map(function (spell) { return spell.actionId; }));
-    console.error("spellToCast: " + spellToCast);
+    // console.error(`repeatable: ` + castableSpells.filter(spell => spell.repeatable).map(spell => spell.actionId));
+    console.error("spellToCast: " + (spellToCast ? spellToCast.actionId : ''));
+    console.error("spamSpell: " + spamSpell);
     console.error("=========");
 }
