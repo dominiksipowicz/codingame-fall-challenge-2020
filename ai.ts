@@ -35,6 +35,7 @@ let orders: Order[] = [];
 let spells: Spell[] = [];
 let learnSpells: Learn[] = [];
 let userData: any[];
+let restClock: number = 0;
 
 // functinos
 
@@ -89,7 +90,11 @@ const chooseSpell = (orders: Order[], myInventoryDelta: Delta, castableSpells: S
     return null;
   }
 
-  return randomSpell(castableSpells); // fallback
+  if (restClock > 0) {
+      restClock = 0;
+      return randomSpell(castableSpells); // fallback
+  }
+  return castableSpells.shift();
 }
 
 const chooseSpellToLearn = (learnSpells: Learn[], inventoryDelta: Delta): Learn | null => {
@@ -184,6 +189,7 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
         || cmpDelta(learn, [0,0,1,0])
         || cmpDelta(learn, [2,1,0,0])
         || cmpDelta(learn, [0,2,0,0])
+        || cmpDelta(learn, [1,0,1,0])
     );
 
     const learnPowerfullSpells = learnSpells
@@ -308,23 +314,25 @@ while (true) {
       console.log(specialActions);
     } else if (castableSpells.length > 0 && spamSpell === false) {
       console.log('CAST ' + spellToCast.actionId);
-    } else if (castableSpells.length > 1 && spamSpell === true && learnSpell) {
+    } else if (castableSpells.length > 0 && spamSpell === true && learnSpell) {
       console.log('LEARN ' + learnSpell.actionId);
       console.error(`learnSpell tomeIndex: ` + learnSpell.tomeIndex);
     } else {
       console.log('REST');  // what's a different between REST and WAIT?
+      restClock++;
     }
 
     // debug
     console.error(`=========`);
-    console.error(`afordableOrders: ` + afordableOrders.length);
+    // console.error(`afordableOrders: ` + afordableOrders.length);
     console.error(`spellsAvailable: ` + spells.length);
     console.error(`afordableSpells: ` + afordableSpells.map(spell => spell.actionId));
-    console.error(`myInventoryDelta: ` + userData[0].inventoryDelta);
+    // console.error(`myInventoryDelta: ` + userData[0].inventoryDelta);
     console.error(`castableSpells: ` + castableSpells.map(spell => spell.actionId));
     console.error(`LearnSpells: ` + learnSpells.length);
-    console.error(`repeatable: ` + castableSpells.filter(spell => spell.repeatable).map(spell => spell.actionId));
-    console.error(`spellToCast: ` + spellToCast);
+    // console.error(`repeatable: ` + castableSpells.filter(spell => spell.repeatable).map(spell => spell.actionId));
+    console.error(`spellToCast: ` + (spellToCast ? spellToCast.actionId : ''));
+    console.error(`spamSpell: ` + spamSpell);
     console.error(`=========`);
 
 
