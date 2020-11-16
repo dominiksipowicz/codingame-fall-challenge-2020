@@ -202,11 +202,18 @@ const performSpecialActions = (orders: Order[], myInventoryDelta: Delta, learnSp
     }
 
     // cast spell to get ride of too much tier-0 ingridients
-
     if (myInventoryDelta[0] >= 5) {
         const spellsToReduceTier0 = castableSpells.filter(spell => (spell.delta[0] < 0));
         if (spellsToReduceTier0.length > 0) {
             return `CAST ${spellsToReduceTier0.shift().actionId}`
+        }
+    }
+
+    // cast spell to get ride of too much tier-1 ingridients
+    if (myInventoryDelta[1] > 5) {
+        const spellsToReduceTier1 = castableSpells.filter(spell => (spell.delta[1] < 0));
+        if (spellsToReduceTier1.length > 0) {
+            return `CAST ${spellsToReduceTier1.shift().actionId}`
         }
     }
 
